@@ -1,7 +1,7 @@
 {
-  "name": "dhoflipapi",
+  "name": "dhofolioapi",
   "version": "0.0.1",
-  "description": "Middleware for the DHOFLIP Solution",
+  "description": "Middleware for the DHOFOLIO Solution",
   "main": "app.js",
   "type": "commonjs",
   "scripts": {
