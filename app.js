@@ -3,6 +3,7 @@ const fs = require('fs');
 const expr= require('express');
 const jwt = require('jsonwebtoken');
 const mysql = require('mysql');
+const cors = require('cors');
 
 const port = 3001
 const app = expr()
@@ -12,20 +13,42 @@ const credentials = {
   cert: fs.readFileSync('./IN/f938ed46a07d9d5d.crt')
 };
 
+const corsOptions = {
+  origin: "*"
+}
+
+
+app.use(cors());
+
 //TODO: Onderstaande gegevens nog te vervangen door de juiste (productie) gegevens FDE 21-11-2020
 const DHOFOLIOpool = mysql.createPool({
   connectionLimit: 10, 
   password: 'AyGcSvTh1GyH2ilwU7bH+_(1', 
   user: 'root',
   database: 'DHOFOLIO',
-  host: 'localhost',
+  host: '192.168.1.2',
   port: '3308' 
 });
  
 
+// Deze functie krijgt de naam van een Sproc en parameters en stuurt deze naar de database om de gegevens uit de database te halen
+DHOFOLIOGetDBDataWithParms = (MySqlSPROCNameIn, MySqlSPROCParmNameIn) => {
+  console.log('In function DHOFOLIOGetDBDataWithParms, params are: MySqlSPROCNameIN= ' + MySqlSPROCNameIn + " and MySqlSPROCParmNameIN= " + MySqlSPROCParmNameIn);
+  return new Promise( (resolve, reject) => {
+    DHOFOLIOpool.query('CALL ' + MySqlSPROCNameIn + '(' + MySqlSPROCParmNameIn +')', (err, results) => {
+      if (err) {
+        return reject(err);
+      } else {
+        return resolve(results);
+      }
+    });
+  });
+};
+
+
 // Deze functie krijgt de naam van een Sproc en stuurt deze naar de database om de gegevens uit de database te halen
-DHOFOLIOresult = (MySqlSPROCNameIn) => {
-  console.log('In DHOFOLIOresult');
+DHOFOLIOGetDBDataWithoutParms = (MySqlSPROCNameIn) => {
+  console.log('In function DHOFOLIOGetDBDataWithoutParms, Sproc= ' + MySqlSPROCNameIn);
   return new Promise( (resolve, reject) => {
     DHOFOLIOpool.query('CALL ' + MySqlSPROCNameIn, (err, results) => {
       if (err) {
@@ -37,39 +60,73 @@ DHOFOLIOresult = (MySqlSPROCNameIn) => {
   });
 };
 
+
 // Root van de API
-app.get('/', (req, res) => {
+app.get('/', cors(corsOptions), (req, res) => {
   console.log('In app.get');
   res.json({
     Message: 'API for DHO-FOLIO application!'
   });
 });
 
-
-// Deze functie vangt een POST request met URL /api/sproc op en haalt de naam van de sproc uit parameter :id 
-// van de url waarna functie DHOFOLIOresult met de naam van de sproc als parameter uitgevoerd wordt om de gegevens 
-// uit de database te halen. De functie verifyToken wordt gebruikt om deze url middels een token te beschermen
-// tegen onbedoelde toegang.
+// Deze functie vangt een POST request met URL /api/sproc op waarna functie DHOFOLIOGetDBData met de naam van de sproc
+// als parameter uitgevoerd wordt om de gegevens uit de database te halen. De functie verifyToken wordt gebruikt om 
+// deze url middels een token te beschermen  tegen onbedoelde toegang. Deze code is bedoeld om calls voor Sprocs zonder 
+// parameter af te handelen.
 // --------------------------------------------
-
-//TODO: nog inbouwen dat aan de Sproc zelf ook parameters meegegeven kunnen worden
-app.post('/api/sproc/:id', verifyToken, (req, res) => {
-  console.log('In app.post /api/sproc/:id' );
+app.get('/api/sproc/:SprocNameIn', verifyToken, (req, res) => {
+  console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn);
   jwt.verify(req.token, '<TheSecretKey>', (err, authData) => {
     if (err) {
+       console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Status= Forbidden (403)");
       res.sendStatus(403);
+     
     } else {
-      DHOFOLIOresult(req.params.id)
+      DHOFOLIOGetDBDataWithoutParms(req.params.SprocNameIn)
       .then((value) => {
           res.json({
             // message: 'Post created....',
             // authData: authData,
             Databack: value
           });
+          console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Status= Data send back to requestor (200)");
+      })
+      .catch(err => {
+          // Return default code for HTTP "Internal server error" (=500) 
+          res.sendStatus(404);
+          console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Error= " + JSON.stringify(err) + ", translated to HTTP error 500 (Internal server error)");
+      });
+    }
+  });
+});
+
+
+// Deze functie vangt een POST request met URL /api/sproc op en haalt de naam van de sproc uit parameter :SprocNameIn
+// en de waarde van de parameter van deze Sproc uit :SprocParmIn van de url waarna functie DHOFOLIOGetDBData met de naam 
+// van de sproc en de parameter van de Sproc als parameter uitgevoerd wordt om de gegevens uit de database te halen. 
+// De functie verifyToken wordt gebruikt om deze url middels een token te beschermen tegen onbedoelde toegang.
+// Deze code is bedoeld om calls voor Sprocs met parameter af te handelen.
+// --------------------------------------------
+app.get('/api/sproc/:SprocNameIn/:SprocParmIn', verifyToken, (req, res) => {
+  console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + '/' + req.params.SprocParmIn);
+  jwt.verify(req.token, '<TheSecretKey>', (err, authData) => {
+    if (err) {
+      res.sendStatus(403);
+      console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Status= Forbidden (403)");
+    } else {
+      DHOFOLIOGetDBDataWithParms(req.params.SprocNameIn, req.params.SprocParmIn)
+      .then((value) => {
+          res.json({
+            // message: 'Post created....',
+            // authData: authData,
+            Databack: value
+          });
+          console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Status= Data send back to requestor (200)");
       })
       .catch(err => {
           // Return default code for HTTP "Not Found" (=404) 
           res.sendStatus(404);
+          console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Error= " + JSON.stringify(err) + " (404)");
       });
     }
   });
@@ -89,6 +146,7 @@ app.post('/api/login', (req, res) => {
     email: 'jos@deheleolifant.com'  
   }
 
+
   // Deze functie maakt/haalt een token obv eerdere autheticatie (zie hierboven).
   jwt.sign({user: user}, '<TheSecretKey>', { expiresIn: '24h' }, (err, token) => {
     res.json({
@@ -106,6 +164,8 @@ function verifyToken(req, res, next) {
     req.token = bearerToken;
     next();
   } else {
+    // TODO 27-12-2020: Log some additional client info in order to see who fired the " illegal"  request.
+    console.log("Verification of Token failed, sending Forbidden (403).");
     res.sendStatus(403);
   }
 }
@@ -115,5 +175,5 @@ function verifyToken(req, res, next) {
 var httpsServer = https.createServer(credentials, app);
 
 // Deze aanroept zorgt dat de hierboven gecreerde server gaat luisteren
-httpsServer.listen(port), () => { console.log("SSL Server stareted to listen on port: " +  port)};
+httpsServer.listen(port), () => { console.log("SSL & CORS enabled API server listening on port: " +  port)};
 
