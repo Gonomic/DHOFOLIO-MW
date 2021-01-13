@@ -14,11 +14,13 @@ const credentials = {
 };
 
 const corsOptions = {
-  origin: "*"
+  Origin: "*"
 }
 
 
-app.use(cors());
+app.use(cors({
+  origin: "*"
+}));
 
 //TODO: Onderstaande gegevens nog te vervangen door de juiste (productie) gegevens FDE 21-11-2020
 const DHOFOLIOpool = mysql.createPool({
@@ -107,13 +109,14 @@ app.get('/api/sproc/:SprocNameIn', verifyToken, (req, res) => {
 // De functie verifyToken wordt gebruikt om deze url middels een token te beschermen tegen onbedoelde toegang.
 // Deze code is bedoeld om calls voor Sprocs met parameter af te handelen.
 // --------------------------------------------
-app.get('/api/sproc/:SprocNameIn/:SprocParmIn', verifyToken, (req, res) => {
+// app.get('/api/sproc/:SprocNameIn/:SprocParmIn', verifyToken, (req, res) => {
+  app.get('/api/sproc/:SprocNameIn/:SprocParmIn', cors(corsOptions), (req, res) => {
   console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + '/' + req.params.SprocParmIn);
-  jwt.verify(req.token, '<TheSecretKey>', (err, authData) => {
-    if (err) {
-      res.sendStatus(403);
-      console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Status= Forbidden (403)");
-    } else {
+  // jwt.verify(req.token, '<TheSecretKey>', (err, authData) => {
+  //   if (err) {
+  //     res.sendStatus(403);
+  //     console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Status= Forbidden (403)");
+  //   } else {
       DHOFOLIOGetDBDataWithParms(req.params.SprocNameIn, req.params.SprocParmIn)
       .then((value) => {
           res.json({
@@ -129,8 +132,10 @@ app.get('/api/sproc/:SprocNameIn/:SprocParmIn', verifyToken, (req, res) => {
           console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Error= " + JSON.stringify(err) + " (404)");
       });
     }
-  });
-});
+  // }
+  );
+// }
+// );
 
 
 // Deze functie biedt login mogelijkheden om daarmee vervolgens een token op te halen die nodig zijn om bepaalde url's te kunen aanroepen.
