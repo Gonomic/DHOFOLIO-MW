@@ -9,23 +9,29 @@ const port = 3001
 const app = expr()
 
 const credentials = {
-  key: fs.readFileSync('./IN/dekknetcom.key'),
-  cert: fs.readFileSync('./IN/f938ed46a07d9d5d.crt')
+  key: fs.readFileSync('./IN/server.key'),
+  cert: fs.readFileSync('./IN/__dekknet_com.crt')
 };
 
-const corsOptions = {
-  Origin: "*"
+
+// app.options('*', cors());
+
+var corsOptions = {
+  origin: [
+    'https://dekknet.com', 
+    'https://dhofoliofe.dekknet.com',
+    'https://192.168.1.10:666',
+    'https://192.168.1.2:666',
+    'https://localhost:1001'
+  ] 
 }
 
-
-app.use(cors({
-  origin: "*"
-}));
+app.use(cors(corsOptions));
 
 //TODO: Onderstaande gegevens nog te vervangen door de juiste (productie) gegevens FDE 21-11-2020
 const DHOFOLIOpool = mysql.createPool({
   connectionLimit: 10, 
-  password: 'AyGcSvTh1GyH2ilwU7bH+_(1', 
+  password: '97qjLGIuAzHtA520lEAu+)_', 
   user: 'root',
   database: 'DHOFOLIO',
   host: '192.168.1.2',
@@ -65,7 +71,9 @@ DHOFOLIOGetDBDataWithoutParms = (MySqlSPROCNameIn) => {
 
 // Root van de API
 app.get('/', cors(corsOptions), (req, res) => {
-  console.log('In app.get');
+  console.log('In app.get. Url= /');
+  console.log("Request headers are: " + req.rawHeaders);
+
   res.json({
     Message: 'API for DHO-FOLIO application!'
   });
@@ -78,6 +86,7 @@ app.get('/', cors(corsOptions), (req, res) => {
 // --------------------------------------------
 app.get('/api/sproc/:SprocNameIn', verifyToken, (req, res) => {
   console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn);
+  console.log("Request headers are: " + req.rawHeaders);
   jwt.verify(req.token, '<TheSecretKey>', (err, authData) => {
     if (err) {
        console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Status= Forbidden (403)");
@@ -112,6 +121,7 @@ app.get('/api/sproc/:SprocNameIn', verifyToken, (req, res) => {
 // app.get('/api/sproc/:SprocNameIn/:SprocParmIn', verifyToken, (req, res) => {
   app.get('/api/sproc/:SprocNameIn/:SprocParmIn', cors(corsOptions), (req, res) => {
   console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + '/' + req.params.SprocParmIn);
+  console.log("Request headers are: " + req.rawHeaders);
   // jwt.verify(req.token, '<TheSecretKey>', (err, authData) => {
   //   if (err) {
   //     res.sendStatus(403);
