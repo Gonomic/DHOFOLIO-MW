@@ -8,6 +8,10 @@ const cors = require('cors');
 const port = 3001
 const app = expr()
 
+app.use(cors());
+app.options('*', cors());
+
+
 const credentials = {
   key: fs.readFileSync('./IN/server.key'),
   cert: fs.readFileSync('./IN/__dekknet_com.crt')
@@ -16,17 +20,21 @@ const credentials = {
 
 // app.options('*', cors());
 
-var corsOptions = {
-  origin: [
-    'https://dekknet.com', 
-    'https://dhofoliofe.dekknet.com',
-    'https://192.168.1.10:666',
-    'https://192.168.1.2:666',
-    'https://localhost:1001'
-  ] 
-}
+// var corsOptions = {
+//   origin: [
+//     'https://dekknet.com', 
+//     'https://dhofoliofe.dekknet.com',
+//     'https://dhofoliomw.dekknet.com',
+//     'https://192.168.1.10:666',
+//     'https://192.168.1.2:666',
+//     'https://192.168.1.11:1001',
+//     'https://localhost:1001'
+//   ] 
+// }
 
-app.use(cors(corsOptions));
+
+
+// app.use(cors(corsOptions));
 
 //TODO: Onderstaande gegevens nog te vervangen door de juiste (productie) gegevens FDE 21-11-2020
 const DHOFOLIOpool = mysql.createPool({
@@ -70,7 +78,7 @@ DHOFOLIOGetDBDataWithoutParms = (MySqlSPROCNameIn) => {
 
 
 // Root van de API
-app.get('/', cors(corsOptions), (req, res) => {
+app.get('/', (req, res) => {
   console.log('In app.get. Url= /');
   console.log("Request headers are: " + req.rawHeaders);
 
@@ -119,7 +127,7 @@ app.get('/api/sproc/:SprocNameIn', verifyToken, (req, res) => {
 // Deze code is bedoeld om calls voor Sprocs met parameter af te handelen.
 // --------------------------------------------
 // app.get('/api/sproc/:SprocNameIn/:SprocParmIn', verifyToken, (req, res) => {
-  app.get('/api/sproc/:SprocNameIn/:SprocParmIn', cors(corsOptions), (req, res) => {
+  app.get('/api/sproc/:SprocNameIn/:SprocParmIn', (req, res) => {
   console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + '/' + req.params.SprocParmIn);
   console.log("Request headers are: " + req.rawHeaders);
   // jwt.verify(req.token, '<TheSecretKey>', (err, authData) => {
@@ -129,12 +137,20 @@ app.get('/api/sproc/:SprocNameIn', verifyToken, (req, res) => {
   //   } else {
       DHOFOLIOGetDBDataWithParms(req.params.SprocNameIn, req.params.SprocParmIn)
       .then((value) => {
-          res.json({
+          res.json(
             // message: 'Post created....',
             // authData: authData,
-            Databack: value
-          });
-          console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Status= Data send back to requestor (200)");
+            value
+          );
+
+          // res.json({
+          //   // message: 'Post created....',
+          //   // authData: authData,
+          //   Databack: value
+          // });
+
+
+          console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Status= Data send back to requestor (200). Data=" + JSON.stringify(value));
       })
       .catch(err => {
           // Return default code for HTTP "Not Found" (=404) 
