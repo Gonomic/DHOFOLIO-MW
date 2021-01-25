@@ -99,7 +99,8 @@ app.get('/', (req, res) => {
   console.log("Request headers are: " + req.rawHeaders);
 
   res.json({
-    Message: 'API for DHO-FOLIO application!'
+    Message: 'API for DHO-FOLIO application!',
+    DateAndTime: Date.now()
   });
 });
 
