@@ -50,14 +50,27 @@ const DHOFOLIOpool = mysql.createPool({
 // Deze functie krijgt de naam van een Sproc en parameters en stuurt deze naar de database om de gegevens uit de database te halen
 DHOFOLIOGetDBDataWithParms = (MySqlSPROCNameIn, MySqlSPROCParmNameIn) => {
   console.log('In function DHOFOLIOGetDBDataWithParms, params are: MySqlSPROCNameIN= ' + MySqlSPROCNameIn + " and MySqlSPROCParmNameIN= " + MySqlSPROCParmNameIn);
+  console.log('In function DHOFOLIOGetDBDataWithParms, Result of isNaN on MySqlSPROCParmNameIn: ' + isNaN(MySqlSPROCParmNameIn));
   return new Promise( (resolve, reject) => {
-    DHOFOLIOpool.query('CALL ' + MySqlSPROCNameIn + '(' + MySqlSPROCParmNameIn +')', (err, results) => {
-      if (err) {
-        return reject(err);
-      } else {
-        return resolve(results);
-      }
-    });
+    if (isNaN(MySqlSPROCParmNameIn)) {
+      console.log("In function DHOFOLIOGetDBDataWithParms, MySqlSPROCParmNameIn is NOT a number!");
+      DHOFOLIOpool.query('CALL ' + MySqlSPROCNameIn + '("' + MySqlSPROCParmNameIn +'")', (err, results) => {
+        if (err) {
+          return reject(err);
+        } else {
+          return resolve(results);
+        }
+      });
+    } else {
+      console.log("In function DHOFOLIOGetDBDataWithParms, MySqlSPROCParmNameIn is A number!");
+      DHOFOLIOpool.query('CALL ' + MySqlSPROCNameIn + '(' + MySqlSPROCParmNameIn +')', (err, results) => {
+        if (err) {
+          return reject(err);
+        } else {
+          return resolve(results);
+        }
+      });
+    };
   });
 };
 
@@ -96,7 +109,7 @@ DHOFOLIOGetDBDataWithoutParms = (MySqlSPROCNameIn) => {
 // Root van de API
 app.get('/', (req, res) => {
   console.log('In app.get. Url= /');
-  console.log("Request headers are: " + req.rawHeaders);
+  // console.log("Request headers are: " + req.rawHeaders);
 
   res.json({
     Message: 'API for DHO-FOLIO application!',
@@ -111,7 +124,7 @@ app.get('/', (req, res) => {
 // --------------------------------------------
 app.get('/api/sproc/:SprocNameIn', verifyToken, (req, res) => {
   console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn);
-  console.log("Request headers are: " + req.rawHeaders);
+  // console.log("Request headers are: " + req.rawHeaders);
   jwt.verify(req.token, '<TheSecretKey>', (err, authData) => {
     if (err) {
        console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Status= Forbidden (403)");
@@ -146,7 +159,7 @@ app.get('/api/sproc/:SprocNameIn', verifyToken, (req, res) => {
 // app.get('/api/sproc/:SprocNameIn/:SprocParmIn', verifyToken, (req, res) => {
   app.get('/api/sproc/:SprocNameIn/:SprocParmIn', (req, res) => {
   console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + '/' + req.params.SprocParmIn);
-  console.log("Request headers are: " + req.rawHeaders);
+  // console.log("Request headers are: " + req.rawHeaders);
   // jwt.verify(req.token, '<TheSecretKey>', (err, authData) => {
   //   if (err) {
   //     res.sendStatus(403);
@@ -191,7 +204,7 @@ app.get('/api/sproc/:SprocNameIn', verifyToken, (req, res) => {
 // app.get('/api/sproc/:SprocNameIn/:SprocParmIn', verifyToken, (req, res) => {
   app.get('/api/sproc/:SprocNameIn/:SprocParmIn1/:SprocParmIn2', (req, res) => {
     console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + '/' + req.params.SprocParmIn1 + '/' + req.paramsSprocParmIn2);
-    console.log("Request headers are: " + req.rawHeaders);
+    // console.log("Request headers are: " + req.rawHeaders);
     // jwt.verify(req.token, '<TheSecretKey>', (err, authData) => {
     //   if (err) {
     //     res.sendStatus(403);
