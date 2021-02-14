@@ -104,8 +104,6 @@ DHOFOLIOGetDBDataWithoutParms = (MySqlSPROCNameIn) => {
 };
 
 
-
-
 // Root van de API
 app.get('/', (req, res) => {
   console.log('In app.get. Url= /');
@@ -247,21 +245,28 @@ app.get('/api/sproc/:SprocNameIn', verifyToken, (req, res) => {
 //TODO: reguliere authenticatie code schrijven om bv de <TheSecretKey> te bewaren en op te kunnen halen
 app.post('/api/login', (req, res) => {
   console.log('In app.post /api/login');
-
   const user = {
     id: 1,
     username: 'JosB' ,
     email: 'jos@deheleolifant.com'  
   }
-
-
   // Deze functie maakt/haalt een token obv eerdere autheticatie (zie hierboven).
   jwt.sign({user: user}, '<TheSecretKey>', { expiresIn: '24h' }, (err, token) => {
     res.json({
       token: token
     });
   });
-}); 
+});
+
+app.post('/api/sproc/:SprocNameIn/:SprocParmIn', (req, res) => {
+  console.log('In app.post /api/sproc/');
+  console.log('In app.post /api/sproc/ - SprocNameIn= ' + req.params.SprocNameIn);
+  console.log('In app.post /api/sproc/ - SprocParmIn= ' + req.params.SprocParmIn);
+  console.log('In app.post /api/sproc/ - Content of SprocParmIn= ' + JSON.stringify(req.params.SprocParmIn));
+  console.log('In app.post /api/sproc/ - Content of SprocParmIn.Naam= ' + req.params.SprocParmIn.Naam);
+  res.sendStatus(404);
+
+});
 
 // Deze functie verificeert een token en wordt gebruikt bij het "opvangen" van url's om te bepalen of er antwoord op gegeven mag worden.
 function verifyToken(req, res, next) {
