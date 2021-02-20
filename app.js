@@ -4,12 +4,14 @@ const expr= require('express');
 const jwt = require('jsonwebtoken');
 const mysql = require('mysql');
 const cors = require('cors');
+// const bodyParser = require('body-parser');
 
 const port = 3001
 const app = expr()
 
 app.use(cors());
 app.options('*', cors());
+app.use(expr.json({ extended: true}));
 
 
 const credentials = {
@@ -39,13 +41,29 @@ const credentials = {
 //TODO: Onderstaande gegevens nog te vervangen door de juiste (productie) gegevens FDE 21-11-2020
 const DHOFOLIOpool = mysql.createPool({
   connectionLimit: 10, 
-  password: '97qjLGIuAzHtA520lEAu+)_', 
-  user: 'root',
+  password: 'BijzonderZeerGeheim*#2', 
+  user: 'FU',
   database: 'DHOFOLIO',
   host: '192.168.1.2',
   port: '3308' 
 });
  
+
+// Deze functie krijgt de naam van een Sproc en parameters en stuurt deze naar de database om de gegevens uit de database te halen
+DHOFOLIOPostDBDataWithParms = (MySqlSPROCNameIn, MySqlSPROCParmDataIn) => {
+  console.log('In function DHOFOLIOPostDBDataWithParms, params are: MySqlSPROCNameIN= ' + MySqlSPROCNameIn + " and MySqlSPROCParmDataIn= " + MySqlSPROCParmDataIn);
+  return new Promise( (resolve, reject) => {
+      DHOFOLIOpool.query("CALL " + MySqlSPROCNameIn + "('" + JSON.stringify(MySqlSPROCParmDataIn) + "')", (err, results) => {
+        if (err) {
+          return reject(err);
+        } else {
+          return resolve(results);
+        }
+      });
+  });
+};
+
+
 
 // Deze functie krijgt de naam van een Sproc en parameters en stuurt deze naar de database om de gegevens uit de database te halen
 DHOFOLIOGetDBDataWithParms = (MySqlSPROCNameIn, MySqlSPROCParmNameIn) => {
@@ -103,95 +121,6 @@ DHOFOLIOGetDBDataWithoutParms = (MySqlSPROCNameIn) => {
   });
 };
 
-
-// Root van de API
-app.get('/', (req, res) => {
-  console.log('In app.get. Url= /');
-  // console.log("Request headers are: " + req.rawHeaders);
-
-  res.json({
-    Message: 'API for DHO-FOLIO application!',
-    DateAndTime: Date.now()
-  });
-});
-
-// Deze functie vangt een POST request met URL /api/sproc op waarna functie DHOFOLIOGetDBData met de naam van de sproc
-// als parameter uitgevoerd wordt om de gegevens uit de database te halen. De functie verifyToken wordt gebruikt om 
-// deze url middels een token te beschermen  tegen onbedoelde toegang. Deze code is bedoeld om calls voor Sprocs zonder 
-// parameter af te handelen.
-// --------------------------------------------
-app.get('/api/sproc/:SprocNameIn', verifyToken, (req, res) => {
-  console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn);
-  // console.log("Request headers are: " + req.rawHeaders);
-  jwt.verify(req.token, '<TheSecretKey>', (err, authData) => {
-    if (err) {
-       console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Status= Forbidden (403)");
-      res.sendStatus(403);
-     
-    } else {
-      DHOFOLIOGetDBDataWithoutParms(req.params.SprocNameIn)
-      .then((value) => {
-          res.json({
-            // message: 'Post created....',
-            // authData: authData,
-            Databack: value
-          });
-          console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Status= Data send back to requestor (200)");
-      })
-      .catch(err => {
-          // Return default code for HTTP "Internal server error" (=500) 
-          res.sendStatus(404);
-          console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Error= " + JSON.stringify(err) + ", translated to HTTP error 500 (Internal server error)");
-      });
-    }
-  });
-});
-
-
-// Deze functie vangt een POST request met URL /api/sproc op en haalt de naam van de sproc uit parameter :SprocNameIn
-// en de waarde van de parameter van deze Sproc uit :SprocParmIn van de url waarna functie DHOFOLIOGetDBData met de naam 
-// van de sproc en de parameter van de Sproc als parameter uitgevoerd wordt om de gegevens uit de database te halen. 
-// De functie verifyToken wordt gebruikt om deze url middels een token te beschermen tegen onbedoelde toegang.
-// Deze code is bedoeld om calls voor Sprocs met parameter af te handelen.
-// --------------------------------------------
-// app.get('/api/sproc/:SprocNameIn/:SprocParmIn', verifyToken, (req, res) => {
-  app.get('/api/sproc/:SprocNameIn/:SprocParmIn', (req, res) => {
-  console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + '/' + req.params.SprocParmIn);
-  // console.log("Request headers are: " + req.rawHeaders);
-  // jwt.verify(req.token, '<TheSecretKey>', (err, authData) => {
-  //   if (err) {
-  //     res.sendStatus(403);
-  //     console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Status= Forbidden (403)");
-  //   } else {
-      DHOFOLIOGetDBDataWithParms(req.params.SprocNameIn, req.params.SprocParmIn)
-      .then((value) => {
-          res.json(
-            // message: 'Post created....',
-            // authData: authData,
-            value
-          );
-
-          // res.json({
-          //   // message: 'Post created....',
-          //   // authData: authData,
-          //   Databack: value
-          // });
-
-
-          console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Status= Data send back to requestor (200). Data=" + JSON.stringify(value));
-      })
-      .catch(err => {
-          // Return default code for HTTP "Not Found" (=404) 
-          res.sendStatus(404);
-          console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Error= " + JSON.stringify(err) + " (404)");
-      });
-    }
-  // }
-  );
-// }
-// );
-
-
 // Deze functie vangt een POST request met URL /api/sproc op en haalt de naam van de sproc uit parameter :SprocNameIn.
 // De waarde van de parameters (precies 2) wordt gehaald uit :SprocParmIn1 en :SprocParmIn2.
 // Waarna DHOFOLIOGetDBData met de naam van de sproc en de parameters van de Sproc als parameter uitgevoerd wordt 
@@ -236,7 +165,92 @@ app.get('/api/sproc/:SprocNameIn', verifyToken, (req, res) => {
   // }
   // );
 
+// Deze functie vangt een POST request met URL /api/sproc op en haalt de naam van de sproc uit parameter :SprocNameIn
+// en de waarde van de parameter van deze Sproc uit :SprocParmIn van de url waarna functie DHOFOLIOGetDBData met de naam 
+// van de sproc en de parameter van de Sproc als parameter uitgevoerd wordt om de gegevens uit de database te halen. 
+// De functie verifyToken wordt gebruikt om deze url middels een token te beschermen tegen onbedoelde toegang.
+// Deze code is bedoeld om calls voor Sprocs met parameter af te handelen.
+// --------------------------------------------
+// app.get('/api/sproc/:SprocNameIn/:SprocParmIn', verifyToken, (req, res) => {
+  app.get('/api/sproc/:SprocNameIn/:SprocParmIn', (req, res) => {
+    console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + '/' + req.params.SprocParmIn);
+    // console.log("Request headers are: " + req.rawHeaders);
+    // jwt.verify(req.token, '<TheSecretKey>', (err, authData) => {
+    //   if (err) {
+    //     res.sendStatus(403);
+    //     console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Status= Forbidden (403)");
+    //   } else {
+        DHOFOLIOGetDBDataWithParms(req.params.SprocNameIn, req.params.SprocParmIn)
+        .then((value) => {
+            res.json(
+              // message: 'Post created....',
+              // authData: authData,
+              value
+            );
+  
+            // res.json({
+            //   // message: 'Post created....',
+            //   // authData: authData,
+            //   Databack: value
+            // });
+  
+  
+            console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Status= Data send back to requestor (200). Data=" + JSON.stringify(value));
+        })
+        .catch(err => {
+            // Return default code for HTTP "Not Found" (=404) 
+            res.sendStatus(404);
+            console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Error= " + JSON.stringify(err) + " (404)");
+        });
+      }
+    // }
+    );
+  // }
+  // );
 
+// Deze functie vangt een POST request met URL /api/sproc op waarna functie DHOFOLIOGetDBData met de naam van de sproc
+// als parameter uitgevoerd wordt om de gegevens uit de database te halen. De functie verifyToken wordt gebruikt om 
+// deze url middels een token te beschermen  tegen onbedoelde toegang. Deze code is bedoeld om calls voor Sprocs zonder 
+// parameter af te handelen.
+// --------------------------------------------
+app.get('/api/sproc/:SprocNameIn', verifyToken, (req, res) => {
+  console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn);
+  // console.log("Request headers are: " + req.rawHeaders);
+  jwt.verify(req.token, '<TheSecretKey>', (err, authData) => {
+    if (err) {
+       console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Status= Forbidden (403)");
+      res.sendStatus(403);
+     
+    } else {
+      DHOFOLIOGetDBDataWithoutParms(req.params.SprocNameIn)
+      .then((value) => {
+          res.json({
+            // message: 'Post created....',
+            // authData: authData,
+            Databack: value
+          });
+          console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Status= Data send back to requestor (200)");
+      })
+      .catch(err => {
+          // Return default code for HTTP "Internal server error" (=500) 
+          res.sendStatus(404);
+          console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Error= " + JSON.stringify(err) + ", translated to HTTP error 500 (Internal server error)");
+      });
+    }
+  });
+});
+
+
+// Root van de API
+app.get('/', (req, res) => {
+  console.log('In app.get. Url= /');
+  // console.log("Request headers are: " + req.rawHeaders);
+
+  res.json({
+    Message: 'API for DHO-FOLIO application!',
+    DateAndTime: Date.now()
+  });
+});
 
 
 // Deze functie biedt login mogelijkheden om daarmee vervolgens een token op te halen die nodig zijn om bepaalde url's te kunen aanroepen.
@@ -262,10 +276,23 @@ app.post('/api/sproc/:SprocNameIn/:SprocParmIn', (req, res) => {
   console.log('In app.post /api/sproc/');
   console.log('In app.post /api/sproc/ - SprocNameIn= ' + req.params.SprocNameIn);
   console.log('In app.post /api/sproc/ - SprocParmIn= ' + req.params.SprocParmIn);
-  console.log('In app.post /api/sproc/ - Content of SprocParmIn= ' + JSON.stringify(req.params.SprocParmIn));
-  console.log('In app.post /api/sproc/ - Content of SprocParmIn.Naam= ' + req.params.SprocParmIn.Naam);
-  res.sendStatus(404);
-
+  console.log("in app.post /api/sproc/ - body= " + req.body);
+  console.log('In app post /api/sproc/ - stringified body= ' + JSON.stringify(req.body));
+  console.log('In app post /api/sproc/ - body.Naam= ' + req.body.Naam);
+  DHOFOLIOPostDBDataWithParms(req.params.SprocNameIn, req.body)
+  .then((value) => {
+      res.json(
+        // message: 'Post created....',
+        // authData: authData,
+        value
+      );
+      console.log('In app.post. Url= /api/sproc/' + req.params.SprocNameIn + ". Status= Data send back to requestor (200). Data=" + JSON.stringify(value));
+  })
+  .catch(err => {
+      // Return default code for HTTP "Not Found" (=404) 
+      res.sendStatus(404);
+      console.log('In app.post. Url= /api/sproc/' + req.params.SprocNameIn + ". Error= " + JSON.stringify(err) + " (404)");
+  });
 });
 
 // Deze functie verificeert een token en wordt gebruikt bij het "opvangen" van url's om te bepalen of er antwoord op gegeven mag worden.
