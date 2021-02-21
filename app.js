@@ -51,7 +51,6 @@ const DHOFOLIOpool = mysql.createPool({
 
 // Deze functie krijgt de naam van een Sproc en parameters en stuurt deze naar de database om de gegevens uit de database te halen
 DHOFOLIOPostDBDataWithParms = (MySqlSPROCNameIn, MySqlSPROCParmDataIn) => {
-  console.log('In function DHOFOLIOPostDBDataWithParms, params are: MySqlSPROCNameIN= ' + MySqlSPROCNameIn + " and MySqlSPROCParmDataIn= " + MySqlSPROCParmDataIn);
   return new Promise( (resolve, reject) => {
       DHOFOLIOpool.query("CALL " + MySqlSPROCNameIn + "('" + JSON.stringify(MySqlSPROCParmDataIn) + "')", (err, results) => {
         if (err) {
@@ -63,15 +62,24 @@ DHOFOLIOPostDBDataWithParms = (MySqlSPROCNameIn, MySqlSPROCParmDataIn) => {
   });
 };
 
+// Deze functie krijgt de naam van een Sproc en parameters en stuurt deze naar de database om de gegevens uit de database te verwijderen
+DHOFOLIODeleteDBDataWithParms = (MySqlSPROCNameIn, MySqlSPROCParmNameIn) => {
+  return new Promise( (resolve, reject) => {
+      DHOFOLIOpool.query('CALL ' + MySqlSPROCNameIn + '("' + MySqlSPROCParmNameIn +'")', (err, results) => {
+        if (err) {
+          return reject(err);
+        } else {
+          return resolve(results);
+        }
+      });
+  });
+};
 
 
 // Deze functie krijgt de naam van een Sproc en parameters en stuurt deze naar de database om de gegevens uit de database te halen
 DHOFOLIOGetDBDataWithParms = (MySqlSPROCNameIn, MySqlSPROCParmNameIn) => {
-  console.log('In function DHOFOLIOGetDBDataWithParms, params are: MySqlSPROCNameIN= ' + MySqlSPROCNameIn + " and MySqlSPROCParmNameIN= " + MySqlSPROCParmNameIn);
-  console.log('In function DHOFOLIOGetDBDataWithParms, Result of isNaN on MySqlSPROCParmNameIn: ' + isNaN(MySqlSPROCParmNameIn));
-  return new Promise( (resolve, reject) => {
+   return new Promise( (resolve, reject) => {
     if (isNaN(MySqlSPROCParmNameIn)) {
-      console.log("In function DHOFOLIOGetDBDataWithParms, MySqlSPROCParmNameIn is NOT a number!");
       DHOFOLIOpool.query('CALL ' + MySqlSPROCNameIn + '("' + MySqlSPROCParmNameIn +'")', (err, results) => {
         if (err) {
           return reject(err);
@@ -80,7 +88,6 @@ DHOFOLIOGetDBDataWithParms = (MySqlSPROCNameIn, MySqlSPROCParmNameIn) => {
         }
       });
     } else {
-      console.log("In function DHOFOLIOGetDBDataWithParms, MySqlSPROCParmNameIn is A number!");
       DHOFOLIOpool.query('CALL ' + MySqlSPROCNameIn + '(' + MySqlSPROCParmNameIn +')', (err, results) => {
         if (err) {
           return reject(err);
@@ -94,7 +101,6 @@ DHOFOLIOGetDBDataWithParms = (MySqlSPROCNameIn, MySqlSPROCParmNameIn) => {
 
 // Deze functie krijgt de naam van een Sproc en 2 parameters en stuurt deze naar de database om de gegevens uit de database te halen
 DHOFOLIOGetDBDataWithParms2 = (MySqlSPROCNameIn, MySqlSPROCParmNameIn1, MySqlSPROCParmNameIn2) => {
-  console.log('In function DHOFOLIOGetDBDataWithParms2, params are: MySqlSPROCNameIN= ' + MySqlSPROCNameIn + " and MySqlSPROCParmNameIN1= " + MySqlSPROCParmNameIn1 + " and MySqlSPROCParmNameIN2= " + MySqlSPROCParmNameIn2);
   return new Promise( (resolve, reject) => {
     DHOFOLIOpool.query('CALL ' + MySqlSPROCNameIn + '(' + MySqlSPROCParmNameIn1 + ',' + MySqlSPROCParmNameIn2 + ')', (err, results) => {
       if (err) {
@@ -109,7 +115,6 @@ DHOFOLIOGetDBDataWithParms2 = (MySqlSPROCNameIn, MySqlSPROCParmNameIn1, MySqlSPR
 
 // Deze functie krijgt de naam van een Sproc en stuurt deze naar de database om de gegevens uit de database te halen
 DHOFOLIOGetDBDataWithoutParms = (MySqlSPROCNameIn) => {
-  console.log('In function DHOFOLIOGetDBDataWithoutParms, Sproc= ' + MySqlSPROCNameIn);
   return new Promise( (resolve, reject) => {
     DHOFOLIOpool.query('CALL ' + MySqlSPROCNameIn, (err, results) => {
       if (err) {
@@ -160,10 +165,8 @@ DHOFOLIOGetDBDataWithoutParms = (MySqlSPROCNameIn) => {
             console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Error= " + JSON.stringify(err) + " (404)");
         });
       }
-    // }
     );
-  // }
-  // );
+
 
 // Deze functie vangt een POST request met URL /api/sproc op en haalt de naam van de sproc uit parameter :SprocNameIn
 // en de waarde van de parameter van deze Sproc uit :SprocParmIn van de url waarna functie DHOFOLIOGetDBData met de naam 
@@ -174,12 +177,6 @@ DHOFOLIOGetDBDataWithoutParms = (MySqlSPROCNameIn) => {
 // app.get('/api/sproc/:SprocNameIn/:SprocParmIn', verifyToken, (req, res) => {
   app.get('/api/sproc/:SprocNameIn/:SprocParmIn', (req, res) => {
     console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + '/' + req.params.SprocParmIn);
-    // console.log("Request headers are: " + req.rawHeaders);
-    // jwt.verify(req.token, '<TheSecretKey>', (err, authData) => {
-    //   if (err) {
-    //     res.sendStatus(403);
-    //     console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Status= Forbidden (403)");
-    //   } else {
         DHOFOLIOGetDBDataWithParms(req.params.SprocNameIn, req.params.SprocParmIn)
         .then((value) => {
             res.json(
@@ -193,8 +190,6 @@ DHOFOLIOGetDBDataWithoutParms = (MySqlSPROCNameIn) => {
             //   // authData: authData,
             //   Databack: value
             // });
-  
-  
             console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Status= Data send back to requestor (200). Data=" + JSON.stringify(value));
         })
         .catch(err => {
@@ -203,10 +198,8 @@ DHOFOLIOGetDBDataWithoutParms = (MySqlSPROCNameIn) => {
             console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Error= " + JSON.stringify(err) + " (404)");
         });
       }
-    // }
     );
-  // }
-  // );
+
 
 // Deze functie vangt een POST request met URL /api/sproc op waarna functie DHOFOLIOGetDBData met de naam van de sproc
 // als parameter uitgevoerd wordt om de gegevens uit de database te halen. De functie verifyToken wordt gebruikt om 
@@ -214,7 +207,6 @@ DHOFOLIOGetDBDataWithoutParms = (MySqlSPROCNameIn) => {
 // parameter af te handelen.
 // --------------------------------------------
 app.get('/api/sproc/:SprocNameIn', verifyToken, (req, res) => {
-  console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn);
   // console.log("Request headers are: " + req.rawHeaders);
   jwt.verify(req.token, '<TheSecretKey>', (err, authData) => {
     if (err) {
@@ -244,8 +236,6 @@ app.get('/api/sproc/:SprocNameIn', verifyToken, (req, res) => {
 // Root van de API
 app.get('/', (req, res) => {
   console.log('In app.get. Url= /');
-  // console.log("Request headers are: " + req.rawHeaders);
-
   res.json({
     Message: 'API for DHO-FOLIO application!',
     DateAndTime: Date.now()
@@ -273,12 +263,6 @@ app.post('/api/login', (req, res) => {
 });
 
 app.post('/api/sproc/:SprocNameIn/:SprocParmIn', (req, res) => {
-  console.log('In app.post /api/sproc/');
-  console.log('In app.post /api/sproc/ - SprocNameIn= ' + req.params.SprocNameIn);
-  console.log('In app.post /api/sproc/ - SprocParmIn= ' + req.params.SprocParmIn);
-  console.log("in app.post /api/sproc/ - body= " + req.body);
-  console.log('In app post /api/sproc/ - stringified body= ' + JSON.stringify(req.body));
-  console.log('In app post /api/sproc/ - body.Naam= ' + req.body.Naam);
   DHOFOLIOPostDBDataWithParms(req.params.SprocNameIn, req.body)
   .then((value) => {
       res.json(
@@ -294,6 +278,22 @@ app.post('/api/sproc/:SprocNameIn/:SprocParmIn', (req, res) => {
       console.log('In app.post. Url= /api/sproc/' + req.params.SprocNameIn + ". Error= " + JSON.stringify(err) + " (404)");
   });
 });
+
+app.delete('/api/sproc/:SprocNameIn/:SprocParmIn', (req, res) => {
+  DHOFOLIODeleteDBDataWithParms(req.params.SprocNameIn, req.params.SprocParmIn)
+  .then((value) => {
+      res.json(
+        value
+      );
+      console.log('In app.delete. Url= /api/sproc/' + req.params.SprocNameIn + ". Status= Data send back to requestor (200). Data=" + JSON.stringify(value));
+  })
+  .catch(err => {
+      // Return default code for HTTP "Not Found" (=404) 
+      res.sendStatus(404);
+      console.log('In app.delete. Url= /api/sproc/' + req.params.SprocNameIn + ". Error= " + JSON.stringify(err) + " (404)");
+  });
+});
+
 
 // Deze functie verificeert een token en wordt gebruikt bij het "opvangen" van url's om te bepalen of er antwoord op gegeven mag worden.
 function verifyToken(req, res, next) {
