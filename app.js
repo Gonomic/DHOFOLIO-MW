@@ -4,6 +4,7 @@ const expr= require('express');
 const jwt = require('jsonwebtoken');
 const mysql = require('mysql');
 const cors = require('cors');
+const { Console } = require('console');
 // const bodyParser = require('body-parser');
 
 const port = 3001
@@ -135,14 +136,26 @@ DHOFOLIOGetDBDataWithoutParms = (MySqlSPROCNameIn) => {
 // --------------------------------------------
 // app.get('/api/sproc/:SprocNameIn/:SprocParmIn', verifyToken, (req, res) => {
   app.get('/api/sproc/:SprocNameIn/:SprocParmIn1/:SprocParmIn2', (req, res) => {
-    console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + '/' + req.params.SprocParmIn1 + '/' + req.paramsSprocParmIn2);
+    console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + '/' + req.params.SprocParmIn1 + '/' + req.params.SprocParmIn2);
     // console.log("Request headers are: " + req.rawHeaders);
     // jwt.verify(req.token, '<TheSecretKey>', (err, authData) => {
     //   if (err) {
     //     res.sendStatus(403);
     //     console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Status= Forbidden (403)");
     //   } else {
-        DHOFOLIOGetDBDataWithParms2(req.params.SprocNameIn, req.params.SprocParmIn1, req.params.SprocParmIn2)
+        alternativeString = req.params.SprocParmIn2;
+        if (typeof req.params.SprocParmIn2 === 'string' ) {
+          console.log("Is a string");
+          if (req.params.SprocParmIn2.substr(1,1) === '[') {
+            alternativeString = req.params.SprocParmIn2 ;
+          }
+          console.log("After conversion: " + alternativeString);
+        }
+          
+          // Number.isNaN(req.params.SprocParmIn2)) {
+        
+        DHOFOLIOGetDBDataWithParms2(req.params.SprocNameIn, req.params.SprocParmIn1, alternativeString )
+        // DHOFOLIOGetDBDataWithParms2(req.params.SprocNameIn, req.params.SprocParmIn1, req.params.SprocParmIn2)
         .then((value) => {
             res.json(
               // message: 'Post created....',
