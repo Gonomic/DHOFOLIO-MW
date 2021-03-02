@@ -102,6 +102,10 @@ DHOFOLIOGetDBDataWithParms = (MySqlSPROCNameIn, MySqlSPROCParmNameIn) => {
 
 // Deze functie krijgt de naam van een Sproc en 2 parameters en stuurt deze naar de database om de gegevens uit de database te halen
 DHOFOLIOGetDBDataWithParms2 = (MySqlSPROCNameIn, MySqlSPROCParmNameIn1, MySqlSPROCParmNameIn2) => {
+  MySqlSPROCParmNameIn1 = '"' + MySqlSPROCParmNameIn1 + '"'; 
+  console.log("In DHOFOLIOGetDBDataWithParms2, MySqlSPROCNameIn= " + MySqlSPROCNameIn);
+  console.log("In DHOFOLIOGetDBDataWithParms2, MySqlSPROCParmNameIn1= " + MySqlSPROCParmNameIn1);
+  console.log("In DHOFOLIOGetDBDataWithParms2, MySqlSPROCParmNameIn2= " + MySqlSPROCParmNameIn2);
   return new Promise( (resolve, reject) => {
     DHOFOLIOpool.query('CALL ' + MySqlSPROCNameIn + '(' + MySqlSPROCParmNameIn1 + ',' + MySqlSPROCParmNameIn2 + ')', (err, results) => {
       if (err) {
@@ -136,25 +140,27 @@ DHOFOLIOGetDBDataWithoutParms = (MySqlSPROCNameIn) => {
 // --------------------------------------------
 // app.get('/api/sproc/:SprocNameIn/:SprocParmIn', verifyToken, (req, res) => {
   app.get('/api/sproc/:SprocNameIn/:SprocParmIn1/:SprocParmIn2', (req, res) => {
-    console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + '/' + req.params.SprocParmIn1 + '/' + req.params.SprocParmIn2);
+    console.log('===> In app.get. /api/sproc/:SprocNameIn/:SprocParmIn1/:SprocParmIn2, Url= /api/sproc/' + req.params.SprocNameIn + '/' + req.params.SprocParmIn1 + '/' + req.params.SprocParmIn2);
     // console.log("Request headers are: " + req.rawHeaders);
     // jwt.verify(req.token, '<TheSecretKey>', (err, authData) => {
     //   if (err) {
     //     res.sendStatus(403);
     //     console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Status= Forbidden (403)");
     //   } else {
-        alternativeString = req.params.SprocParmIn2;
-        if (typeof req.params.SprocParmIn2 === 'string' ) {
-          console.log("Is a string");
-          if (req.params.SprocParmIn2.substr(1,1) === '[') {
-            alternativeString = req.params.SprocParmIn2 ;
-          }
-          console.log("After conversion: " + alternativeString);
-        }
+      console.log('===> In app.get, req.params.SprocParmIn1= ' + req.params.SprocParmIn1);
+      console.log('===> In app.get, req.params.SprocParmIn2= ' + req.params.SprocParmIn2);
+        // alternativeString = req.params.SprocParmIn2;
+        // if (typeof req.params.SprocParmIn2 === 'string' ) {
+        //   console.log("Is a string");
+        //   if (req.params.SprocParmIn2.substr(1,1) === '[') {
+        //     alternativeString = req.params.SprocParmIn2 ;
+        //   }
+        //   console.log("After conversion: " + alternativeString);
+        // }
           
           // Number.isNaN(req.params.SprocParmIn2)) {
         
-        DHOFOLIOGetDBDataWithParms2(req.params.SprocNameIn, req.params.SprocParmIn1, alternativeString )
+        DHOFOLIOGetDBDataWithParms2(req.params.SprocNameIn, req.params.SprocParmIn1, req.params.SprocParmIn2)
         // DHOFOLIOGetDBDataWithParms2(req.params.SprocNameIn, req.params.SprocParmIn1, req.params.SprocParmIn2)
         .then((value) => {
             res.json(
@@ -189,7 +195,7 @@ DHOFOLIOGetDBDataWithoutParms = (MySqlSPROCNameIn) => {
 // --------------------------------------------
 // app.get('/api/sproc/:SprocNameIn/:SprocParmIn', verifyToken, (req, res) => {
   app.get('/api/sproc/:SprocNameIn/:SprocParmIn', (req, res) => {
-    console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + '/' + req.params.SprocParmIn);
+    console.log('In app.get /api/sproc/:SprocNameIn/:SprocParmIn. Url= /api/sproc/' + req.params.SprocNameIn + '/' + req.params.SprocParmIn);
         DHOFOLIOGetDBDataWithParms(req.params.SprocNameIn, req.params.SprocParmIn)
         .then((value) => {
             res.json(
@@ -223,7 +229,7 @@ app.get('/api/sproc/:SprocNameIn', verifyToken, (req, res) => {
   // console.log("Request headers are: " + req.rawHeaders);
   jwt.verify(req.token, '<TheSecretKey>', (err, authData) => {
     if (err) {
-       console.log('In app.get. Url= /api/sproc/' + req.params.SprocNameIn + ". Status= Forbidden (403)");
+       console.log('In app.get  /api/sproc/:SprocNameIn. Url= /api/sproc/' + req.params.SprocNameIn + ". Status= Forbidden (403)");
       res.sendStatus(403);
      
     } else {
